@@ -39,9 +39,9 @@ EXCLUDE = ! -name 'manifest-md5.txt' \
 
 bagit:
 	@if [ -f $(MANIFEST_MD5) ] || [ -f $(MANIFEST_SHA256) ]; then \
-		echo "\033[1;33mWarning: Bag already exists.\033[0m"; \
-		echo "  Run '\033[1mmake verify\033[0m' to check the current bag."; \
-		echo "  Run '\033[1mmake rebagit\033[0m' to regenerate."; \
+		echo "Warning: Bag already exists."; \
+		echo "  Run 'make verify' to check the current bag."; \
+		echo "  Run 'make rebagit' to regenerate."; \
 		exit 1; \
 	fi
 	@# --- bagit.txt ---
@@ -58,10 +58,10 @@ bagit:
 			echo "Payload-Oxum: $$BYTES.$$COUNT" >> $(BAG_INFO); \
 			echo "Created $(BAG_INFO) from README.md frontmatter"; \
 		else \
-			echo "\033[1;33mNote: README.md has no YAML frontmatter — skipping $(BAG_INFO)\033[0m"; \
+			echo "Note: README.md has no YAML frontmatter — skipping $(BAG_INFO)"; \
 		fi; \
 	else \
-		echo "\033[1;33mNote: No README.md found — skipping $(BAG_INFO)\033[0m"; \
+		echo "Note: No README.md found — skipping $(BAG_INFO)"; \
 	fi
 	@# --- manifests ---
 	@echo "Generating MD5 manifest..."
@@ -81,12 +81,12 @@ verify:
 	echo ""; \
 	TOTAL_FAIL=0; \
 	if [ -f $(BAGIT_TXT) ]; then \
-		echo "\033[1m── $(BAGIT_TXT) ──\033[0m"; \
+		echo "── $(BAGIT_TXT) ──"; \
 		cat $(BAGIT_TXT); \
 		echo ""; \
 	fi; \
 	if [ -f $(BAG_INFO) ]; then \
-		echo "\033[1m── $(BAG_INFO) ──\033[0m"; \
+		echo "── $(BAG_INFO) ──"; \
 		cat $(BAG_INFO); \
 		echo ""; \
 		OXUM=$$(grep '^Payload-Oxum:' $(BAG_INFO) | cut -d' ' -f2); \
@@ -96,7 +96,7 @@ verify:
 			ACTUAL_BYTES=$$(find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' -exec cat {} + 2>/dev/null | wc -c | tr -d ' '); \
 			ACTUAL_COUNT=$$(find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' | wc -l | tr -d ' '); \
 			if [ "$$ACTUAL_BYTES" = "$$EXPECTED_BYTES" ] && [ "$$ACTUAL_COUNT" = "$$EXPECTED_COUNT" ]; then \
-				echo "\033[1;32m  Payload-Oxum OK ✓\033[0m  ($$ACTUAL_BYTES bytes, $$ACTUAL_COUNT files)"; \
+				echo "  Payload-Oxum OK ✓  ($$ACTUAL_BYTES bytes, $$ACTUAL_COUNT files)"; \
 			else \
 				echo "\033[1;31m  Payload-Oxum MISMATCH\033[0m"; \
 				if [ "$$ACTUAL_BYTES" != "$$EXPECTED_BYTES" ]; then \
@@ -114,7 +114,7 @@ verify:
 		if [ ! -f "$$MANIFEST" ]; then continue; fi; \
 		ALGO=$$(echo "$$MANIFEST" | sed 's/manifest-\(.*\)\.txt/\1/'); \
 		SUMCMD=$$(echo "$$ALGO" | sed 's/-//g')sum; \
-		echo "\033[1m=== Verifying $$ALGO ($$(wc -l < "$$MANIFEST") files) ===\033[0m\n"; \
+		echo "=== Verifying $$ALGO ($$(wc -l < "$$MANIFEST") files) ===\n"; \
 		PASS=0; FAIL=0; MISSING=0; \
 		while IFS='  ' read -r hash file; do \
 			if [ ! -f "$$file" ]; then \
@@ -134,7 +134,7 @@ verify:
 		done < "$$MANIFEST"; \
 		echo ""; \
 		echo "────────────────────────────────"; \
-		echo "\033[1;32m  Passed:  $$PASS\033[0m"; \
+		echo "  Passed:  $$PASS"; \
 		if [ $$FAIL -gt 0 ]; then \
 			echo "\033[1;31m  Failed:  $$FAIL\033[0m"; \
 		fi; \
@@ -153,9 +153,9 @@ verify:
 		| xargs -0 -I{} sh -c \
 			'grep -q "  {}$$" $(MANIFEST_MD5) 2>/dev/null || echo "$$1"' _ {}); \
 	if [ -n "$$NEW" ]; then \
-		echo "\033[1;33m  New untracked files:\033[0m"; \
+		echo "  New untracked files:"; \
 		echo "$$NEW" | while read -r f; do \
-			echo "\033[1;33m  NEW      \033[0m $$f"; \
+			echo "  NEW       $$f"; \
 		done; \
 		echo "────────────────────────────────"; \
 		echo ""; \
