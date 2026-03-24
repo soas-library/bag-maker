@@ -10,6 +10,7 @@ Drop a single `Makefile` into any directory and get proper [BagIt-style](https:/
 make bagit      # generate bag (manifests, bagit.txt, bag-info.txt)
 make verify     # check all files against the manifests
 make rebagit    # regenerate bag from scratch
+make shake-out  # remove non-manifest files, prepare for transfer
 make clean      # remove all bag files
 ```
 
@@ -32,6 +33,8 @@ Refuses to overwrite an existing bag — use `rebagit` for that.
   - **MISSING** — file in manifest no longer exists (purple)
   - **NEW** — file on disk not tracked in manifest (yellow)
 - Returns a non-zero exit code on any failure, so it's safe to use in scripts
+
+**`make shake-out`** prepares a bag for transfer or archival upload by finding files that exist on disk but aren't in the manifest — `.DS_Store`, `Thumbs.db`, editor temp files, stray downloads, etc. Lists them with sizes, then asks for confirmation before deleting. Afterwards, offers to remove the `.git` directory so the bag is a clean, standalone package.
 
 **`make rebagit`** runs `clean` then `bagit` — a deliberate "start fresh" when you know files have changed.
 
@@ -99,7 +102,7 @@ The tool automatically adds:
 
 ## License
 
-Public domain — do what you like with it.
+CC0 This work has been marked as dedicated to the public domain — do what you like with it.
 
 ## Origin
 

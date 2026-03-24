@@ -1,20 +1,24 @@
 # ┌──────────────────────────────────────────────────────┐
-# │  bagit.mk — poor man's BagIt                         │
+# │  Bag Maker:                                          │
 # │  MD5 + SHA256 manifest generation and verification   │
 # │  with bag-info.txt from README.md frontmatter        │
 # │  ...without the heavy java or python dependency.     │
 # │                                                      │
-# │  Usage:  make bagit    — generate bag                │
-# │          make verify   — check file integrity        │
-# │          make rebagit  — regenerate from scratch     │
-# │          make clean    — remove bag files            │
+# │  Aids Best Current Practice (BCP) for:               │
+# │  ...RFC 8493 BagIt File Packaging Format (V1.0).     │
+# │                                                      │
+# │  Usage:  make bagit     — generate bag               │
+# │          make verify    — check file integrity       │
+# │          make rebagit   — regenerate from scratch    │
+# │          make shake-out — remove non-manifest files  │
+# │          make clean     — remove bag files           │
 # │                                                      │
 # │  Drop this Makefile into any directory and go.       │
 # │  Requires: md5sum, sha256sum, find, sort (coreutils) │
 # │                                                      │
 # │  Created: Feb 2026                                   │
 # │  Origin:  Human + Claude, iteratively developed      │
-# │  License: Public domain — do what you like with it   │
+# │  License: CC0                                        │
 # └──────────────────────────────────────────────────────┘
 
 MANIFEST_MD5    = manifest-md5.txt
@@ -35,7 +39,7 @@ EXCLUDE = ! -name 'manifest-md5.txt' \
 		  ! -path './build/*' \
 		  ! -path './stage/*'
 
-.PHONY: bagit rebagit verify clean
+.PHONY: bagit rebagit verify clean shake-out
 
 bagit:
 	@if [ -f $(MANIFEST_MD5) ] || [ -f $(MANIFEST_SHA256) ]; then \
@@ -165,6 +169,69 @@ verify:
 		exit 1; \
 	else \
 		echo "\033[1;32m  ALL OK ✓\033[0m"; \
+	fi
+
+shake-out:
+	@if [ ! -f $(MANIFEST_MD5) ]; then \
+		echo "\033[1;31mError: No manifest found. Run 'make bagit' first.\033[0m"; \
+		exit 1; \
+	fi; \
+	ORPHANS=$$(find . -type f \
+		! -path './.git/*' \
+		! -name 'Makefile' \
+		! -name '$(MANIFEST_MD5)' \
+		! -name '$(MANIFEST_SHA256)' \
+		! -name '$(BAGIT_TXT)' \
+		! -name '$(BAG_INFO)' \
+		| while read -r f; do \
+			grep -q "  $$f$$" $(MANIFEST_MD5) || echo "$$f"; \
+		done); \
+	if [ -z "$$ORPHANS" ]; then \
+		echo "\033[1;32mBag is clean — nothing to shake out.\033[0m"; \
+		exit 0; \
+	fi; \
+	echo ""; \
+	echo "Orphan files (not in manifest):"; \
+	echo ""; \
+	echo "$$ORPHANS" | while read -r f; do \
+		SIZE=$$(wc -c < "$$f" | tr -d ' '); \
+		printf "  \033[1;33m%-40s\033[0m  %s bytes\n" "$$f" "$$SIZE"; \
+	done; \
+	COUNT=$$(echo "$$ORPHANS" | wc -l | tr -d ' '); \
+	echo ""; \
+	echo "────────────────────────────────"; \
+	echo "  $$COUNT file(s) not in manifest."; \
+	echo "────────────────────────────────"; \
+	echo ""; \
+	printf "Remove these files? [y/N] "; \
+	read -r CONFIRM; \
+	case "$$CONFIRM" in \
+		[yY]) \
+			echo ""; \
+			echo "$$ORPHANS" | while read -r f; do \
+				rm -f "$$f"; \
+				echo "  Removed $$f"; \
+			done; \
+			echo ""; \
+			echo "\033[1;32mOrphan files removed.\033[0m"; \
+			;; \
+		*) \
+			echo "Skipped."; \
+			;; \
+	esac; \
+	echo ""; \
+	if [ -d .git ]; then \
+		printf "Remove .git directory? This bag will no longer be a repo. [y/N] "; \
+		read -r GITCONFIRM; \
+		case "$$GITCONFIRM" in \
+			[yY]) \
+				rm -rf .git; \
+				echo "\033[1;32m  Removed .git — bag is ready for transfer.\033[0m"; \
+				;; \
+			*) \
+				echo "  Kept .git."; \
+				;; \
+		esac; \
 	fi
 
 clean:
