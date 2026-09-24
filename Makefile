@@ -69,10 +69,10 @@ bagit:
 	fi
 	@# --- manifests ---
 	@echo "Generating MD5 manifest..."
-	@find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' -exec md5sum {} + | sort > $(MANIFEST_MD5)
+	@find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' -exec md5sum {} + | sed 's/ \*/ /' | sort > $(MANIFEST_MD5)
 	@echo "  Created $(MANIFEST_MD5) with $$(wc -l < $(MANIFEST_MD5)) entries."
 	@echo "Generating SHA256 manifest..."
-	@find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' ! -name '$(MANIFEST_MD5)' -exec sha256sum {} + | sort > $(MANIFEST_SHA256)
+	@find . -type f $(EXCLUDE) ! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' ! -name '$(MANIFEST_MD5)' -exec sha256sum {} + | sed 's/ \*/ /' | sort > $(MANIFEST_SHA256)
 	@echo "  Created $(MANIFEST_SHA256) with $$(wc -l < $(MANIFEST_SHA256)) entries."
 
 rebagit: clean bagit
@@ -120,7 +120,9 @@ verify:
 		SUMCMD=$$(echo "$$ALGO" | sed 's/-//g')sum; \
 		echo "=== Verifying $$ALGO ($$(wc -l < "$$MANIFEST") files) ===\n"; \
 		PASS=0; FAIL=0; MISSING=0; \
-		while IFS='  ' read -r hash file; do \
+		while read -r hash file; do \
+			file=$${file#\*}; \
+			file=$$(printf '%s' "$$file" | tr -d '\r'); \
 			if [ ! -f "$$file" ]; then \
 				echo "\033[1;35m  MISSING  \033[0m $$file"; \
 				MISSING=$$((MISSING + 1)); \
@@ -155,7 +157,7 @@ verify:
 		! -name '$(MANIFEST_MD5)' ! -name '$(MANIFEST_SHA256)' \
 		! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' -print0 \
 		| xargs -0 -I{} sh -c \
-			'grep -q "  {}$$" $(MANIFEST_MD5) 2>/dev/null || echo "$$1"' _ {}); \
+			'grep -Fq "{}$$" $(MANIFEST_MD5) 2>/dev/null || echo "$$1"' _ {}); \
 	if [ -n "$$NEW" ]; then \
 		echo "  New untracked files:"; \
 		echo "$$NEW" | while read -r f; do \
@@ -184,7 +186,7 @@ shake-out:
 		! -name '$(BAGIT_TXT)' \
 		! -name '$(BAG_INFO)' \
 		| while read -r f; do \
-			grep -q "  $$f$$" $(MANIFEST_MD5) || echo "$$f"; \
+			grep -Fq "$$f" $(MANIFEST_MD5) || echo "$$f"; \
 		done); \
 	if [ -z "$$ORPHANS" ]; then \
 		echo "\033[1;32mBag is clean — nothing to shake out.\033[0m"; \
