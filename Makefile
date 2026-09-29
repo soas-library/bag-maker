@@ -154,10 +154,13 @@ verify:
 		echo ""; \
 	done; \
 	NEW=$$(find . -type f $(EXCLUDE) \
-		! -name '$(MANIFEST_MD5)' ! -name '$(MANIFEST_SHA256)' \
-		! -name '$(BAGIT_TXT)' ! -name '$(BAG_INFO)' -print0 \
-		| xargs -0 -I{} sh -c \
-			'grep -Fq "{}$$" $(MANIFEST_MD5) 2>/dev/null || echo "$$1"' _ {}); \
+		! -name '$(MANIFEST_MD5)' \
+		! -name '$(MANIFEST_SHA256)' \
+		! -name '$(BAGIT_TXT)' \
+		! -name '$(BAG_INFO)' \
+		| while read -r f; do \
+			grep -Fq "$$f" $(MANIFEST_MD5) || echo "$$f"; \
+	done); \
 	if [ -n "$$NEW" ]; then \
 		echo "  New untracked files:"; \
 		echo "$$NEW" | while read -r f; do \
