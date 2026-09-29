@@ -79,18 +79,18 @@ rebagit: clean bagit
 
 verify:
 	@if [ ! -f $(MANIFEST_MD5) ] && [ ! -f $(MANIFEST_SHA256) ]; then \
-		echo "\033[1;31mError: No manifests found. Run 'make bagit' first.\033[0m"; \
+		echo "Error: No manifests found. Run 'make bagit' first."; \
 		exit 1; \
 	fi; \
 	echo ""; \
 	TOTAL_FAIL=0; \
 	if [ -f $(BAGIT_TXT) ]; then \
-		echo "── $(BAGIT_TXT) ──"; \
+		echo "-- $(BAGIT_TXT) --"; \
 		cat $(BAGIT_TXT); \
 		echo ""; \
 	fi; \
 	if [ -f $(BAG_INFO) ]; then \
-		echo "── $(BAG_INFO) ──"; \
+		echo "-- $(BAG_INFO) --"; \
 		cat $(BAG_INFO); \
 		echo ""; \
 		OXUM=$$(grep '^Payload-Oxum:' $(BAG_INFO) | cut -d' ' -f2); \
@@ -102,7 +102,7 @@ verify:
 			if [ "$$ACTUAL_BYTES" = "$$EXPECTED_BYTES" ] && [ "$$ACTUAL_COUNT" = "$$EXPECTED_COUNT" ]; then \
 				echo "  Payload-Oxum OK ✓  ($$ACTUAL_BYTES bytes, $$ACTUAL_COUNT files)"; \
 			else \
-				echo "\033[1;31m  Payload-Oxum MISMATCH\033[0m"; \
+				echo "  Payload-Oxum MISMATCH"; \
 				if [ "$$ACTUAL_BYTES" != "$$EXPECTED_BYTES" ]; then \
 					echo "    bytes:  expected $$EXPECTED_BYTES, got $$ACTUAL_BYTES"; \
 				fi; \
@@ -124,14 +124,14 @@ verify:
 			file=$${file#\*}; \
 			file=$$(printf '%s' "$$file" | tr -d '\r'); \
 			if [ ! -f "$$file" ]; then \
-				echo "\033[1;35m  MISSING  \033[0m $$file"; \
+				echo "  MISSING   $$file"; \
 				MISSING=$$((MISSING + 1)); \
 			else \
 				actual=$$($$SUMCMD "$$file" | cut -d' ' -f1); \
 				if [ "$$actual" = "$$hash" ]; then \
 					PASS=$$((PASS + 1)); \
 				else \
-					echo "\033[1;31m  FAILED   \033[0m $$file"; \
+					echo "  FAILED    $$file"; \
 					echo "           expected: $$hash"; \
 					echo "           got:      $$actual"; \
 					FAIL=$$((FAIL + 1)); \
@@ -139,15 +139,15 @@ verify:
 			fi; \
 		done < "$$MANIFEST"; \
 		echo ""; \
-		echo "────────────────────────────────"; \
+		echo "--------------------------------"; \
 		echo "  Passed:  $$PASS"; \
 		if [ $$FAIL -gt 0 ]; then \
-			echo "\033[1;31m  Failed:  $$FAIL\033[0m"; \
+			echo "  Failed:  $$FAIL"; \
 		fi; \
 		if [ $$MISSING -gt 0 ]; then \
-			echo "\033[1;35m  Missing: $$MISSING\033[0m"; \
+			echo "  Missing: $$MISSING"; \
 		fi; \
-		echo "────────────────────────────────"; \
+		echo "--------------------------------"; \
 		if [ $$FAIL -gt 0 ] || [ $$MISSING -gt 0 ]; then \
 			TOTAL_FAIL=1; \
 		fi; \
@@ -166,19 +166,19 @@ verify:
 		echo "$$NEW" | while read -r f; do \
 			echo "  NEW       $$f"; \
 		done; \
-		echo "────────────────────────────────"; \
+		echo "--------------------------------"; \
 		echo ""; \
 	fi; \
 	if [ "$$TOTAL_FAIL" = "1" ]; then \
-		echo "\033[1;31m  VERIFICATION FAILED\033[0m"; \
+		echo "  VERIFICATION FAILED"; \
 		exit 1; \
 	else \
-		echo "\033[1;32m  ALL OK ✓\033[0m"; \
+		echo "  ALL OK ✓"; \
 	fi
 
 shake-out:
 	@if [ ! -f $(MANIFEST_MD5) ]; then \
-		echo "\033[1;31mError: No manifest found. Run 'make bagit' first.\033[0m"; \
+		echo "Error: No manifest found. Run 'make bagit' first."; \
 		exit 1; \
 	fi; \
 	ORPHANS=$$(find . -type f \
@@ -192,7 +192,7 @@ shake-out:
 			grep -Fq "$$f" $(MANIFEST_MD5) || echo "$$f"; \
 		done); \
 	if [ -z "$$ORPHANS" ]; then \
-		echo "\033[1;32mBag is clean — nothing to shake out.\033[0m"; \
+		echo "Bag is clean — nothing to shake out."; \
 		exit 0; \
 	fi; \
 	echo ""; \
@@ -200,13 +200,13 @@ shake-out:
 	echo ""; \
 	echo "$$ORPHANS" | while read -r f; do \
 		SIZE=$$(wc -c < "$$f" | tr -d ' '); \
-		printf "  \033[1;33m%-40s\033[0m  %s bytes\n" "$$f" "$$SIZE"; \
+		printf "  %-40s  %s bytes\n" "$$f" "$$SIZE"; \
 	done; \
 	COUNT=$$(echo "$$ORPHANS" | wc -l | tr -d ' '); \
 	echo ""; \
-	echo "────────────────────────────────"; \
+	echo "--------------------------------"; \
 	echo "  $$COUNT file(s) not in manifest."; \
-	echo "────────────────────────────────"; \
+	echo "--------------------------------"; \
 	echo ""; \
 	printf "Remove these files? [y/N] "; \
 	read -r CONFIRM; \
@@ -218,7 +218,7 @@ shake-out:
 				echo "  Removed $$f"; \
 			done; \
 			echo ""; \
-			echo "\033[1;32mOrphan files removed.\033[0m"; \
+			echo "Orphan files removed."; \
 			;; \
 		*) \
 			echo "Skipped."; \
@@ -231,7 +231,7 @@ shake-out:
 		case "$$GITCONFIRM" in \
 			[yY]) \
 				rm -rf .git; \
-				echo "\033[1;32m  Removed .git — bag is ready for transfer.\033[0m"; \
+				echo "  Removed .git — bag is ready for transfer."; \
 				;; \
 			*) \
 				echo "  Kept .git."; \
